@@ -1,0 +1,223 @@
+---
+title: "Consumer Credit Risk Modeling Coursework"
+output: html_notebook
+---
+
+Load the data into data frame D1. 
+```{r}
+load("C://Users//Yuning LI//OneDrive - Imperial College London//Desktop//LCdata_8.RData")
+```
+
+To deal with variable first check with missing data.
+```{r}
+colSums(is.na(D1))
+```
+
+Transform def_flag to numerical representation and then to non-default.
+```{r}
+# numerical representation of non default with non default <- 0
+D1$def <- as.numeric(D1$def_flag)
+D1$non_def <- 1 - D1$def
+```
+
+Transfer loan amount to log loan amount as the distribution is right skewed and loan amount is continuous variable.
+```{r}
+D1$log_loan_amnt <- log(D1$loan_amnt)
+
+hist(D1$loan_amnt, main = "Histogram of Loan Amount", xlab = "Loan Amount", ylab = "Frequency")
+hist(D1$log_loan_amnt, main = "Histogram of Log Loan Amount", xlab = "Log Loan Amount", ylab = "Frequency")
+```
+Grade should be a categorical variable and is related to is a classification system that assigns a quality score to a loan. So no need to transform.
+```{r}
+hist(D1$grade, main = "Histogram of Grade", xlab = "Grade", ylab = "Frequency")
+```
+
+There are missing data in employment length.
+```{r}
+hist(D1$emp_length_p, breaks = c(0,1,2,3,4,5,6,7,8,9,10), main = "Histogram of Employment Length", xlab = "Employment Length", ylab = "Frequency")
+```
+
+```{r}
+# mean imputation of missing values
+D1miss <- D1[!complete.cases(D1),]
+D1$emp_length_p[is.na(D1$emp_length_p)] <- mean(D1$emp_length_p, na.rm = TRUE)
+summary(factor(D1$num_actv_bc_tl))
+D1miss1 <- D1[!complete.cases(D1),]
+D1$avg_cur_bal[is.na(D1$avg_cur_bal)] <- mean(D1$avg_cur_bal, na.rm = TRUE)
+```
+
+```{r}
+# categorization
+quantile(D1$emp_length_p)
+boxplot(D1$emp_length_p, main = "Box Plot of Employment Length")
+summary(factor(D1$emp_length_p))
+```
+```{r}
+D1$emp_num[D1$emp_length_p <= 4] <- 0
+D1$emp_num[D1$emp_length_p >= 10] <- 2
+D1$emp_num[is.na(D1$emp_num)] <- 1
+
+hist(D1$emp_num, main = "Histogram of Employment Length Categorical", xlab = "Categorical Employment Length", ylab = "Frequency")
+```
+
+Term only takes values 36 and 60 so it is a categorical variable and could be transformed into an indicator variable.
+```{r}
+hist(D1$term, main = "Histogram of Term", xlab = "Term", ylab = "Frequency", xlim = c(36,60), ylim = c(0,130000))
+D1$term_num <- as.numeric(D1$term=="36")
+```
+
+Address state is categorical variable so included in the model as a series of binary indicator variables for each possible value.
+
+```{r}
+woe.tab <- function(x,y) {
+ n1 <- sum(y)
+ n0 <- sum(1-y)
+ nx0n1 <- tapply(1-y,x,sum)*n1
+ nx1n0 <- tapply(y,x,sum) *n0
+ nx0n1[which(nx0n1==0)]<-n1
+ nx1n0[which(nx1n0==0)]<-n0
+ return(log(nx0n1)-log(nx1n0))
+}
+woe.assign <- function(wtab, x) {
+ w<-rep(0,length(x))
+ ni<-names(wtab)
+ for (i in 1:length(ni)) {
+w[which(x==ni[i])]<-wtab[i]
+ }
+ return(w)
+}
+
+wtab <- woe.tab(D1$addr_state,D1$non_def)
+D1$addr_state_woe <- woe.assign(wtab,D1$addr_state)
+```
+
+Split the data randomly into a training data set and a test data set.
+```{r}
+set.seed(1234)
+ix<-sample(nrow(D1), round(nrow(D1)*(2/3)), replace=FALSE)
+D1train <- D1[ix,]
+D1test <- D1[-ix,]
+```
+
+```{r}
+glm1.out <- with(D1train,
+glm(non_def ~ log_loan_amnt + grade + emp_num + term_num + addr_state_woe, family = binomial("logit")))
+summary(glm1.out)
+```
+```{r}
+glm1.out$deviance
+# a likelihood ratio test against the null model
+1-pchisq(2*((-glm1.out$deviance)-(-glm1.out$null)), 4)
+```
+
+ROC function which takes two arguments: the first is a
+vector of observed outcomes, the second is a vector of corresponding
+rankings (scores or probabilities).
+```{r}
+roc_tr <- function(y, s)
+{
+ yav <- rep(tapply(y, s, mean), table(s))
+ rocx <- cumsum(yav)
+ rocy <- cumsum(1 - yav)
+ area <- sum(yav * (rocy - 0.5 * (1 - yav)))
+ x1 <- c(0, rocx)/sum(y)
+ y1 <- c(0, rocy)/sum(1 - y)
+ auc <- area/(sum(y) * sum(1 - y))
+ print(auc)
+ plot(x1,y1,"l",ylab="true positive rate",xlab="false positive rate",main="ROC Curve of Training Set")
+}
+roc_te <- function(y, s)
+{
+ yav <- rep(tapply(y, s, mean), table(s))
+ rocx <- cumsum(yav)
+ rocy <- cumsum(1 - yav)
+ area <- sum(yav * (rocy - 0.5 * (1 - yav)))
+ x1 <- c(0, rocx)/sum(y)
+ y1 <- c(0, rocy)/sum(1 - y)
+ auc <- area/(sum(y) * sum(1 - y))
+ print(auc)
+ plot(x1,y1,"l",ylab="true positive rate",xlab="false positive rate",main="ROC Curve of Test Set")
+}
+yt <- predict(glm1.out, D1train, type="link")
+roc_tr(D1train$non_def, yt)
+yt2 <- predict(glm1.out, D1test, type="link")
+roc_te(D1test$non_def, yt2)
+```
+```{r}
+roc_comp <- function(y1, s1, y2, s2)
+{
+ yav1 <- rep(tapply(y1, s1, mean), table(s1))
+ rocx1 <- cumsum(yav1)
+ rocy1 <- cumsum(1 - yav1)
+ area1 <- sum(yav1 * (rocy1 - 0.5 * (1 - yav1)))
+ x11 <- c(0, rocx1)/sum(y1)
+ y11 <- c(0, rocy1)/sum(1 - y1)
+ auc1 <- area1/(sum(y1) * sum(1 - y1))
+ yav2 <- rep(tapply(y2, s2, mean), table(s2))
+ rocx2 <- cumsum(yav2)
+ rocy2 <- cumsum(1 - yav2)
+ area2 <- sum(yav2 * (rocy2 - 0.5 * (1 - yav2)))
+ x12 <- c(0, rocx2)/sum(y2)
+ y12 <- c(0, rocy2)/sum(1 - y2)
+ auc2 <- area2/(sum(y2) * sum(1 - y2))
+ print(auc1)
+ print(auc2)
+ plot(x11,y11,"l",col="red", lty=1, ylab="true positive rate",xlab="false positive rate",main="ROC Curve of Both Training and Test Set")
+ lines(x12,y12,"l",col="blue", lty=2)
+ legend("topleft", legend=c("Train", "Test"), lty=c(1,2), col=c("red","blue"))
+}
+yt1 <- predict(glm1.out, D1train, type="link")
+yt2 <- predict(glm1.out, D1test, type="link")
+roc_comp(D1train$non_def, yt, D1test$non_def, yt2)
+```
+
+```{r}
+glm2.out <- with(D1train,
+glm(non_def ~ grade + emp_num + term_num + addr_state_woe, family = binomial("logit")))
+
+roc <- function(y, s)
+{
+ yav <- rep(tapply(y, s, mean), table(s))
+ rocx <- cumsum(yav)
+ rocy <- cumsum(1 - yav)
+ area <- sum(yav * (rocy - 0.5 * (1 - yav)))
+ x1 <- c(0, rocx)/sum(y)
+ y1 <- c(0, rocy)/sum(1 - y)
+ auc <- area/(sum(y) * sum(1 - y))
+ print(auc)
+ plot(x1,y1,"l",ylab="true positive rate",xlab="false positive rate",main="ROC Curve of Test Set")
+}
+
+ytl <- predict(glm2.out, D1test, type="link")
+roc(D1test$non_def, ytl)
+```
+
+```{r}
+glm3.out <- with(D1train,
+glm(non_def ~ log_loan_amnt + emp_num + term_num + addr_state_woe, family = binomial("logit")))
+
+ytg <- predict(glm3.out, D1test, type="link")
+roc(D1test$non_def, ytg)
+```
+```{r}
+glm4.out <- with(D1train,
+glm(non_def ~ log_loan_amnt + grade + term_num + addr_state_woe, family = binomial("logit")))
+
+yte <- predict(glm4.out, D1test, type="link")
+roc(D1test$non_def, yte)
+```
+```{r}
+glm5.out <- with(D1train,
+glm(non_def ~ log_loan_amnt + grade + emp_num + addr_state_woe, family = binomial("logit")))
+
+ytt <- predict(glm5.out, D1test, type="link")
+roc(D1test$non_def, ytt)
+```
+
+```{r}
+glm6.out <- with(D1train,
+glm(non_def ~ log_loan_amnt + grade + emp_num + term_num, family = binomial("logit")))
+
+yta <- predict(glm6.out, D1test, type="link")
+roc(D1test$non_def, yta)
+```

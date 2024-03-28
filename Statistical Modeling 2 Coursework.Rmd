@@ -1,0 +1,170 @@
+---
+title: "Statistical Modeling 2 Coursework"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+df <- read.csv("C://Users//Yuning LI//Downloads//1868678.csv")
+summary(df)
+```
+
+```{r}
+library(ggplot2)
+ggplot(df, aes(x = Age, y = Number, color = Shape, fill = Shape)) +
+  geom_point(alpha = 0.6) + 
+  xlab("Age of Children") + 
+  ylab("Number of blocks stacked") + 
+  labs(title = "Number of Blocks Stacked by Children of Different Ages")
+```
+```{r}
+ggplot(df, aes(x = Shape, y = Number, fill = Shape, color = Shape)) +
+  geom_boxplot(alpha=0.5) + 
+  xlab("Shape of blocks stacked") + 
+  ylab("Number of blocks stacked") + 
+  labs(title = "Box Plot of Number of Blocks Stacked of Different Shape")
+```
+```{r}
+library(plyr)
+mu_shape <- ddply(df, "Shape", summarise, grp.mean=mean(Number))
+
+ggplot(df, aes(x = Number, color = Shape, fill = Shape)) +
+  geom_histogram(binwidth=0.3, position="dodge", alpha=0.5) + 
+  xlab("Number of blocks stacked") + 
+  ylab("Frequency") + 
+  labs(title = "Histogram of Number of Blocks Stacked of Different Shapes") + geom_vline(data = mu_shape, aes(xintercept=grp.mean, color=Shape),
+             linetype="dashed")
+```
+```{r}
+# fit normal linear regression
+NLM_initail2 <- lm(Number~Shape,dat=df)
+summary(NLM_initail2)
+```
+```{r}
+# fit normal linear regression
+NLM_initail <- lm(Number~Age+Shape,dat=df)
+summary(NLM_initail)
+```
+
+```{r}
+# diagnostic plots
+plot(NLM_initail)
+```
+```{r}
+beta <- as.matrix(NLM_initail$coeff) # initial guess using initial NLM
+df$Shape_num <- as.numeric(df$Shape=="Cylinder") # include categorical variable
+x <- as.matrix(df[,c("Age","Shape_num")])
+y <- df[,"Number"]
+```
+
+```{r}
+# deviance function of Poisson GLM
+D <- function(p){
+ a <- y*log(y/p)
+ b <- y-p
+ a[y==0] <- 0
+ 2*sum(a-b)}
+D_old <- D(exp(cbind(1,x)%*%beta))
+jj <- 0
+# IWLS
+while (jj==0){
+ eta <- as.matrix(cbind(1,x))%*%beta # estimated linear predictor
+ mu <- exp(eta) # estimated mean response
+ z <- eta + (y-mu)*(1/mu) # form the adjusted variate
+ w <- mu # weights
+ lmod <- lm(z~as.matrix(x), weights=w) # regress z on x with weights w
+ beta <- as.numeric(lmod$coeff) # new beta
+ D_new <- D(exp(cbind(1,x)%*%beta))
+ control <- abs(D_new-D_old)/(abs(D_new)+0.1)
+ if(control<1e-8) # stop when deviance converges
+   jj <- 1
+ D_old <- D_new}
+```
+```{r}
+print(beta)
+print(D_new)
+```
+```{r}
+# standard error of beta
+phi <- D_new/(length(y)-2)
+J <- t(as.matrix(cbind(1,x)))%*%diag(as.vector(w))%*%as.matrix(cbind(1,x))
+invJ <- solve(J)
+beta.sd <- sqrt(phi*as.vector(diag(invJ)))
+beta.sd
+```
+```{r}
+# hypothesis test on if beta is significant
+z <- beta/beta.sd
+2*(1-pnorm(abs(z),lower.tail = TRUE)) # p-value
+```
+
+
+```{r}
+GLM_1 <- glm(Number~Age+Shape,dat=df,family = poisson(link = "log"))
+summary(GLM_1)
+```
+```{r}
+plot(GLM_1)
+```
+```{r}
+GLM_2 <- glm(Number~Age,dat=df,family = poisson(link = "log"))
+summary(GLM_2)
+```
+```{r}
+GLM_3 <- glm(Number~Shape,dat=df,family = poisson(link = "log"))
+summary(GLM_3)
+```
+
+```{r}
+GLM_4 <- glm(Number~Age+Shape+Age*Shape,dat=df,family = poisson(link = "log"))
+summary(GLM_4)
+```
+
+
+```{r}
+stepsearch <- step(GLM_1,~.^2,test="Chisq")
+stepsearch$anova
+```
+
+```{r}
+summary(stepsearch)
+```
+```{r}
+# set the test data set
+new_data <- data.frame(Age = rep(c(3, 4, 5), each = 2),
+                       Shape = rep(c("Cube", "Cylinder"), 3))
+
+# linear predictor
+Mean_list <- predict(GLM_1, new_data, type = "response")
+print(Mean_list)
+J <- t(as.matrix(cbind(1,x)))%*%diag(as.vector(w))%*%as.matrix(cbind(1,x))
+invJ <- as.matrix(solve(J))
+beta.sd <- sqrt(phi*as.vector(diag(invJ)))
+x_star <- cbind(1,new_data)
+x_star$Shape <- as.numeric(x_star$Shape=="Cylinder")
+```
+
+```{r}
+for (i in 1:6){
+  x_i <- t(x_star[i,])
+  se_i <- sqrt(t(as.matrix(x_i))%*%invJ%*%(as.matrix(x_i)))
+  eta_i <- t(x_i)%*%GLM_1$coefficients
+  CI_low_i <- exp(eta_i - 1.96 * se_i)
+  CI_high_i <- exp(eta_i + 1.96 * se_i)
+  print(CI_low_i)
+  print(CI_high_i)
+}
+```
+```{r}
+# Compute the analysis of variance
+res.aov <- aov(Number ~ Shape, data = df)
+# Summary of the analysis
+summary(res.aov)
+```
+
+
+
+
