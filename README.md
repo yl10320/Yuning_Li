@@ -1,10 +1,15 @@
 # Yuning_Li
 Below are projects done by Yuning (from the most recent to the earliest).
 
-## NSS Factors Mean Reverting Trending
-We provided an overview of government bonds' significance in financial markets. We detailed the methodology for constructing the OIS curve using swap rates and interpolation techniques. Exploring the NSS model, we discussed its relevance in analyzing yield curve shapes and zero-coupon yields. 
+## Simulation of Arbitrage-Free Implied Volatility Surfaces
+Addressed arbitrage constraints on call option prices and introduced a penalty function to quantify static arbitrage violations. Proposing a Weighted Monte Carlo method, which aimed to penalize arbitrage for paths generated from a baseline model and resample according to the penalization. 
 
-Examining key parameters like $\beta$ coefficients from the NSS model, we investigated the impact of economic events, central bank policies, and geopolitical factors on bond valuations. We also analyzed mean-reverting tendencies and trending behaviors in the $\beta$ coefficients. Finally, we summarized key findings and insights from our analysis.
+Applied this method to a factor model for the implied volatility surface, acting as the baseline model. Introduced VolGAN, describing its architecture, loss functions, reweighting method, and training process, followed by presenting numerical results and comparing the performance with and without the reweighting method.
+
+## NSS Factors Mean Reverting Trending
+Provided an overview of government bonds' significance in financial markets. Detailed the methodology for constructing the OIS curve using swap rates and interpolation techniques. Explored the NSS model and discussed its relevance in analyzing yield curve shapes and zero-coupon yields. 
+
+Examining key parameters like $\beta$ coefficients from the NSS model, investigated the impact of economic events, central bank policies, and geopolitical factors on bond valuations. Analyzed mean-reverting tendencies and trending behaviors in the $\beta$ coefficients and summarized key findings and insights from our analysis.
 
 ## Market Microstructure
 Consider the issue of hedging a European derivative security in the presence of microstructure noise. Simulate market data using Black-Scholes model and model efficient price cross the tick grid.
