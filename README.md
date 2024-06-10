@@ -1,6 +1,13 @@
 # Yuning_Li
 Below are projects done by Yuning (from the most recent to the earliest).
 
+## Quantitative Trading and Price Impact
+First established the data scope, encompassing various dataframes storing trading volumes, market prices, spreads, and stock information. Fitting OW, Reduced form, and Bouchaud price impact models and pre-computed impact models, conducted fitting procedures. Analyzed the models' performance using metrics such as in-sample and out-of-sample $R^2$ values. 
+
+Developed a backtest engine to adjust prices for impact effects and evaluate the trading strategy's impact on prices. Generated synthetic alphas based on binned sample data, considering both basic and overnight return synthetic alphas. Devised optimal trading strategy based on a heuristic target impact formula, with performance metrics including correlation between alpha and returns, expected daily PnLs, Sharpe ratios, transaction costs, and maximum daily drawdowns. 
+
+Conducted sensitivity analysis and stress testing, exploring the effects of varying alpha strength and introducing latency. 
+
 ## Simulation of Arbitrage-Free Implied Volatility Surfaces
 Addressed arbitrage constraints on call option prices and introduced a penalty function to quantify static arbitrage violations. Proposing a Weighted Monte Carlo method, which aimed to penalize arbitrage for paths generated from a baseline model and resample according to the penalization. 
 
