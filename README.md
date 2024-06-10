@@ -1,6 +1,11 @@
 # Yuning_Li
 Below are projects done by Yuning (from the most recent to the earliest).
 
+## NSS Factors Mean Reverting Trending
+We provided an overview of government bonds' significance in financial markets. We detailed the methodology for constructing the OIS curve using swap rates and interpolation techniques. Exploring the NSS model, we discussed its relevance in analyzing yield curve shapes and zero-coupon yields. 
+
+Examining key parameters like $\beta$ coefficients from the NSS model, we investigated the impact of economic events, central bank policies, and geopolitical factors on bond valuations. We also analyzed mean-reverting tendencies and trending behaviors in the $\beta$ coefficients. Finally, we summarized key findings and insights from our analysis.
+
 ## Market Microstructure
 Consider the issue of hedging a European derivative security in the presence of microstructure noise. Simulate market data using Black-Scholes model and model efficient price cross the tick grid.
 
