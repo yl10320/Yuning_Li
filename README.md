@@ -1,6 +1,11 @@
 # Project History
 Below are selected projects done by Yuning (from the most recent to the earliest).
 
+## Liquidity Saving Mechanism for Cross-Border Payment Systems
+Developed cross-border liquidity saving mechanisms using Integer Linear Programming and multi-objective optimization. Given minimum liquidity required to settle all payments (net liquidity requirement), reducing delays of settling cross-border payments between banks by 70% and ensuring full settlement.
+
+Generated cross-border interbank transaction data based on specified distributions. Utilized high-performance computing, including environment setup, job submission (Python, Jupyter), and data management.
+
 ## Quantitative Trading and Price Impact
 First established the data scope, encompassing various dataframes storing trading volumes, market prices, spreads, and stock information. Fitting OW, Reduced form, and Bouchaud price impact models and pre-computed impact models, conducted fitting procedures. Analyzed the models' performance using metrics such as in-sample and out-of-sample $R^2$ values. 
 
