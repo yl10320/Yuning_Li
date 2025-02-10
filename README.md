@@ -1,5 +1,5 @@
-# Yuning_Li
-Below are projects done by Yuning (from the most recent to the earliest).
+# Project History
+Below are selected projects done by Yuning (from the most recent to the earliest).
 
 ## Quantitative Trading and Price Impact
 First established the data scope, encompassing various dataframes storing trading volumes, market prices, spreads, and stock information. Fitting OW, Reduced form, and Bouchaud price impact models and pre-computed impact models, conducted fitting procedures. Analyzed the models' performance using metrics such as in-sample and out-of-sample $R^2$ values. 
